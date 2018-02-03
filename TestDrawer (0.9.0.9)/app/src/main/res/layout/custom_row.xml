@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/original"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:background="@drawable/custom_bg"
+    android:clickable="true"
+    android:focusable="true">
+
+    <ImageView
+        android:id="@+id/custom_row_image_view"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="16dp"
+        android:src="@mipmap/nujabes" />
+
+    <TextView
+        android:id="@+id/custom_row_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:paddingLeft="72dp"
+        android:text="Dummy Text"
+        android:textColor="@color/ColorText"
+        android:textSize="14sp" />
+
+</RelativeLayout>

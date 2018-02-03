@@ -1,0 +1,18 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">@color/ColorPrimary</item>
+        <item name="colorPrimaryDark">@color/ColorPrimaryDark</item>
+    </style>
+
+    <style name="MyTheme.TitleTextStyle" parent="@android:style/TextAppearance">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/ColorPrimaryAccent</item>
+    </style>
+
+    <style name="MyTheme.TitleTextAppearance" parent="@android:style/TextAppearance">
+        <item name="android:textColor">@color/ColorPrimaryAccent</item>
+    </style>
+
+</resources>

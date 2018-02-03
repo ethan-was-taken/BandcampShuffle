@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+        
+    <color name="ColorPrimary">#fd6565</color>    
+    <color name="ColorPrimaryDark">#ffc34545</color>
+    <color name="ColorPrimaryAccent">#f6f6f6</color>
+
+    <color name="ColorLoadingScreenBG">#f6f6f6</color>
+
+    <color name="ColorText">#5E5F60</color>
+
+    <color name="ColorSelectedItem">#64B6AC</color>
+    <color name="ColorHighlight">#BCB8B1</color>
+
+</resources>
