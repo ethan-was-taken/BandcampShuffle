@@ -47,7 +47,7 @@ public class MainActivityHelper {
             case NUJABES:       return 0;
             case FUTURE_FUNK:   return 1;
             case LIKED:         return LIKED_POSITION;
-            default:            return -1;
+            default:            return 0;
         }
     }
 
