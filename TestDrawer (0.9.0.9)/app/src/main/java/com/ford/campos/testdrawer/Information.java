@@ -1,5 +1,8 @@
 package com.ford.campos.testdrawer;
 
+/**
+ * Info used for nav drawer stuff
+ */
 public class Information {
 
     private int iconResourceId;
@@ -37,4 +40,5 @@ public class Information {
     public void setActive(boolean active) {
         this.active = active;
     }
+
 }
