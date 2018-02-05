@@ -5,18 +5,15 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Calendar;
 
 /**
- * Somewhat refactored on: 2/4/18, still needs to be more rigorous
+ * Round 1 refactoring: 2/4/18
  */
 
 public class CheckForUpdate {
@@ -24,15 +21,21 @@ public class CheckForUpdate {
     private static final String TAG = "CheckForUpdate";
     private static final long WEEK_MILLISECONDS = 604800000;
 
-    // If the file doesn't exist, we return true. If it's been less than a
-    // week since last update, we return false, otherwise true
+    /**
+     * If it's been less than a week since last update, the file doesn't need an
+     * update (return false), otherwise return it does need an update (return true).
+     *
+     * @param filename
+     * @param context
+     * @return
+     */
+
     public static boolean needsUpdate(String filename, Context context) {
 
         if (!hasFile(context, filename))
             return true;
         else if (filename.equals("liked"))
             return false;
-
 
         long timeSinceLastUpdate = getTimeSinceLastUpdate(context, filename);
         Log.d(TAG, getTimeInHours(timeSinceLastUpdate) + " hrs since last updated");
@@ -53,13 +56,12 @@ public class CheckForUpdate {
     }
 
     private static long getTimeSinceLastUpdate(Context context, String filename) {
-        String lastUpdatedFilename = getFilename(filename);
+        String lastUpdatedFilename = getLastUpdatedFilename(filename);
         long lastUpdated = getLastUpdated(lastUpdatedFilename, context);
         return Calendar.getInstance().getTimeInMillis() - lastUpdated;
     }
 
-    @NonNull
-    private static String getFilename(String filename) {
+    private static String getLastUpdatedFilename(String filename) {
         return filename + "-last-updated.txt";
     }
 

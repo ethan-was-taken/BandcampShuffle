@@ -10,9 +10,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 /**
- * Mostly refactored on: 2/4/18
+ * Round 1 refactoring: 2/4/18
  *
- * Todo: fix setMusicHolderArraySize(); it is inexcusable.
+ * Todo: fix setMusicHolderArraySize(); it's inexcusable.
  *
  */
 
