@@ -9,11 +9,19 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
 import android.widget.ImageView;
 
+/**
+ * Round 1 refactoring: 2/5/18
+ *
+ * Todo: figure out a better name for frameCount
+ *
+ */
 public class LoadingScreen {
 
     private Context context;
-    private ImageView image;
-    private int frameCount, rotationDuration, animResourceID;
+    private ImageView imageView;
+    private int frameCount;
+    private int rotationDuration;       //The time it takes to complete 1 rotation
+    private int animResourceID;
     private Animation animation;
     private Bitmap bitmap;
 
@@ -22,23 +30,41 @@ public class LoadingScreen {
                          int frameCount, int rotationDuration, int animResourceID) {
 
         this.context = context;
-        this.image = imageView;
+        this.imageView = imageView;
         this.frameCount = frameCount;
-        this.rotationDuration = rotationDuration;                                                   //The time it takes to complete 1 rotation
+        this.rotationDuration = rotationDuration;
         this.animResourceID = animResourceID;
 
         bitmap = BitmapFactory.decodeResource(context.getResources(), drawResourceID);
 
     }
 
-
     public void startAnimation() {
+        setImageToBeAnimated();
+        loadPicIntoAnimation();
+        setAnimationDelta();
+        imageView.startAnimation(animation);
+    }
 
-        image.setImageBitmap(bitmap);
+    /**
+     * Note that this isn't a gif, it's a square picture that will be rotated.
+     */
+    private void setImageToBeAnimated() {
+        imageView.setImageBitmap(bitmap);
+        imageView.setVisibility(View.VISIBLE);
+    }
 
-        image.setVisibility(View.VISIBLE);
-
+    /**
+     * Load the animResourceID into its "container."
+     */
+    private void loadPicIntoAnimation() {
         animation = AnimationUtils.loadAnimation(context, animResourceID);
+    }
+
+    /**
+     * Delta meaning rate of change.
+     */
+    private void setAnimationDelta() {
         animation.setInterpolator(new Interpolator() {
             //int frameCount = 120;
 
@@ -48,19 +74,17 @@ public class LoadingScreen {
             }
         });
         animation.setDuration(rotationDuration);
-        image.startAnimation(animation);
-
     }
 
     public void stopAnimation() {
 
-        if(image == null || animation == null)
+        if(imageView == null || animation == null)
             return;
 
         animation.setDuration(0);
         animation = null;
-        image.invalidate();
-        image.setVisibility(View.INVISIBLE);
+        imageView.invalidate();
+        imageView.setVisibility(View.INVISIBLE);
 
     }
 
@@ -69,7 +93,7 @@ public class LoadingScreen {
         bitmap.recycle();
         bitmap = null;
         context = null;
-        image = null;
+        imageView = null;
         animation = null;
 
     }
