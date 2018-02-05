@@ -12,6 +12,19 @@ import android.view.MenuItem;
 import android.widget.Toast;
 import java.util.ArrayList;
 
+/**
+ * If anyone is reading this: refactoring MainActivity is going to take a
+ * while, please bare with me.
+ *
+ * First we need to refactor the class's methods (which will take forever), then after
+ * that we need to break this class into multiple classes, which, again, will take forever :C
+ *
+ * I appreciate your patience <3
+ *
+ * Halfway through refactoring round 1: 2/5/18
+ *
+ */
+
 public class MainActivity extends AppCompatActivity implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 
     private final String VERSION_NUMBER = "0.9.0.9";
@@ -23,11 +36,8 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     private SaveVersionTwo save = new SaveVersionTwo(this);
     private MusicFinderFragment lastFragment;
-
     private NavigationDrawerFragment mNavigationDrawerFragment;
-
     private CharSequence mTitle;
-
     private MusicHolder musicHolder = new MusicHolder();
     private int currPosition;
 
@@ -40,27 +50,52 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.tool_bar);
-        setSupportActionBar(toolbar);
-        // The next two will eventually be removed
-        getSupportActionBar().setSubtitle("Version: " + VERSION_NUMBER);
-        toolbar.setSubtitleTextAppearance(this, R.style.MyTheme_TitleTextStyle);
-
-        mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mTitle = getTitle();
-
-        // Set up the drawer.
-        mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
+        setupNavDrawer(getToolbar());
 
         addMusic(); // to musicHolder
 
     }
 
+    private void addMusic() {
+        musicHolder.add( MainActivityHelper.loadLinks(this, NUJABES) );
+        musicHolder.add( MainActivityHelper.loadLinks(this, FUTURE_FUNK) );
+        musicHolder.add( MainActivityHelper.loadLinks(this, LIKED) );
+        Log.d(TAG, "loaded " + musicHolder.get(NUJABES).size() + " url's from: " + NUJABES);
+        Log.d(TAG, "loaded " + musicHolder.get(FUTURE_FUNK).size() + " url's from: " + FUTURE_FUNK);
+        Log.d(TAG, "loaded " + musicHolder.get(LIKED).size() + " url's from: " + LIKED);
+    }
+
+    /**
+     * Could probably be refactored more but I like it how it is right now; this
+     * may change in the future.
+     */
+    private Toolbar getToolbar() {
+        // Sets the toolbar
+        Toolbar toolbar = (Toolbar) findViewById(R.id.tool_bar);
+        setSupportActionBar(toolbar);
+
+        // Set version number on toolbar
+        getSupportActionBar().setSubtitle("Version: " + VERSION_NUMBER);
+        toolbar.setSubtitleTextAppearance(this, R.style.MyTheme_TitleTextStyle);
+
+        // title for toolbar
+        mTitle = getTitle();
+
+        return toolbar;
+    }
+
+    private void setupNavDrawer(Toolbar toolbar) {
+        mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
+    }
+
     @Override
     public void onNavigationDrawerItemSelected(int position) {
+
         Log.d(TAG, "onNavDrawer, pos: " + position);
         // Closes the navigation drawer if you pick the item you're already in.
         // firstTimeAppOpened is there so the navigation drawer doesn't close when you
@@ -82,6 +117,55 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
             updateContentView(position, false);
 
         currPosition = position;
+
+    }
+
+    /**
+     * Destroys the old webView when it updates to a new one, then loads a new url
+     * from whatever genre specified.
+     *
+     * @param genrePosition
+     * @param setIsLiked
+     */
+    private void updateContentView(int genrePosition, boolean setIsLiked) {
+
+        if(firstTimeAppOpened)
+            firstTimeAppOpened = false;
+
+        killPrevFragment();
+        setFragmentToGenre(genrePosition);
+        isLikedAlbum = setIsLiked;
+        springCleaning();
+
+    }
+
+    /**
+     * Free up some RAM, also it might be a little redundant
+     */
+    private void killPrevFragment() {
+        if(lastFragment == null)
+            return;
+
+        Log.d(TAG, "updateContentView lastFragment != null");
+        lastFragment.kill();
+        lastFragment.onDestroy();
+    }
+
+    private void setFragmentToGenre(int genreIndex) {
+        switch (genreIndex) {
+            case 0: lastFragment = MusicFinderFragment.newInstance(
+                        NUJABES, genreIndex + 1);
+                    break;
+            case 1: lastFragment = MusicFinderFragment.newInstance(
+                        FUTURE_FUNK, genreIndex + 1);
+                    break;
+            case 2: lastFragment = MusicFinderFragment.newInstance(
+                        LIKED, genreIndex + 1);
+                    break;
+        }
+        // Update the main content by replacing fragments
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, lastFragment).commit();
     }
 
     @Override
@@ -107,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
@@ -114,38 +199,102 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
         if (id == R.id.next) {
 
-            // If there are no more liked albums don't do anything;
+            /**
+             * Todo: further refactoring of this scope
+             */
+
+            // If there are no more liked albums: open the drawer and don't do anything;
             if( currPosition == LIKED_POSITION && musicHolder.isLikedEmpty() ) {
                 mNavigationDrawerFragment.openDrawer();
                 return true;
             }
 
-            // Clear the webview cache, history, etc, to try to release some memory
-            lastFragment.refresh();
-            lastFragment.getAndLoadRandomAlbum(musicHolder.get(currPosition));
-            // Don't worry about this; ignore it
-            springCleaning();
-
-            // Sets the heart icon to heart_empty when you hit next,
-            // as long as you're not in the liked playlist
-            if(currPosition == LIKED_POSITION)
-                updateHeartSettings(R.drawable.heart_filled, true);
-            else
-                updateHeartSettings(R.drawable.heart_empty, false);
-
-            return true;
+            handleNextAlbumButtonClick();
 
         } else if (id == R.id.heart) {
-
-            return isLikedAlbum ? updateLiked(-1, LIKED_POSITION, false, R.drawable.heart_empty) :
-                                  updateLiked(LIKED_POSITION, currPosition, true, R.drawable.heart_filled);
-
+            handleHeartButtonClick();
         }
+        else
+            return super.onOptionsItemSelected(item);
 
-        return super.onOptionsItemSelected(item);
+        return true;
+
     }
 
-    // Saves the linksArray in MusicHolder if there is a change
+    /**
+     * Loads up the next album, suggests to the GC that we should garbage collect, then
+     * reset the heart icon.
+     */
+    private void handleNextAlbumButtonClick() {
+        loadNextAlbum();
+        springCleaning();
+        setHeartIcon();
+    }
+
+    private void loadNextAlbum() {
+        // Clear the webview cache, history, etc, first to try to release some memory
+        lastFragment.refresh();
+        lastFragment.getAndLoadRandomAlbum(musicHolder.get(currPosition));
+    }
+
+    /**
+     * Suggest to JVM that there's some garbage that needs to be collected. However, it's okay
+     * if he doesn't listen to us.
+     */
+    private void springCleaning() {
+        System.gc();
+    }
+
+    /**
+     * Sets the heart icon to heart_empty when you hit next, as long as you're not in
+     * the liked playlist.
+     */
+    private void setHeartIcon() {
+        if(currPosition == LIKED_POSITION)
+            updateHeartSettings(R.drawable.heart_filled, true);
+        else
+            updateHeartSettings(R.drawable.heart_empty, false);
+    }
+
+    private boolean updateHeartSettings(int heartId, boolean updateLikedTo) {
+        menu.findItem(R.id.heart).setIcon(heartId);
+        isLikedAlbum = updateLikedTo;
+        return true;
+    }
+
+    /**
+     * Updates the heart button to the correct icon/
+     */
+    private void handleHeartButtonClick() {
+        if(isLikedAlbum)
+            updateLiked(-1, LIKED_POSITION,
+                    false, R.drawable.heart_empty);
+        else
+            updateLiked(LIKED_POSITION, currPosition,
+                    true, R.drawable.heart_filled);
+    }
+
+    private void updateLiked(int addToGenre, int removeFromGenre, boolean updateLikedTo, int heartId) {
+
+        String currUrl = lastFragment.getCurrentUrl();
+        musicHolder.update(currUrl, addToGenre, removeFromGenre);
+        updateHeartSettings(heartId, updateLikedTo);
+
+        if (updateLikedTo)
+            Toast.makeText(this, "Added to Liked Playlist", Toast.LENGTH_SHORT).show();
+        else if (musicHolder.isLikedEmpty() && currPosition == LIKED_POSITION) {
+            Toast.makeText(this, "There are no more liked albums", Toast.LENGTH_SHORT).show();
+            mNavigationDrawerFragment.openDrawer();
+        }else
+            Toast.makeText(this, "Removed from Liked Playlist", Toast.LENGTH_SHORT).show();
+
+        logInfoForUpdateLiked(updateLikedTo, currUrl);
+
+    }
+
+    /**
+     * Saves the linksArray in MusicHolder if there is a change
+     */
     @Override
     protected void onPause() {
         super.onPause();
@@ -162,10 +311,17 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
             super.onBackPressed();
     }
 
-    public void onSectionAttached(int number) {
-        number -= 1;
+    /**
+     * Sets the title of the toolbar
+     *
+     * @param genreIndex the position of the current genre we are in, in the nav drawer
+     */
+    public void onSectionAttached(int genreIndex) {
 
-        switch (number) {
+        // the index we're passed is 1's based
+        genreIndex -= 1;
+
+        switch (genreIndex) {
             case 0:     mTitle = getString(R.string.title_section1);
                         break;
             case 1:     mTitle = getString(R.string.title_section2);
@@ -175,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
             default:    mTitle = getString(R.string.app_name);
                         break;
         }
+
     }
 
     public void restoreActionBar() {
@@ -197,86 +354,6 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         return musicHolder.getOriginalSizes(index);
     }
     // end of MusicHolder getters & setters
-
-
-    /**
-     * Private Methods
-     */
-
-    private void addMusic() {
-        musicHolder.add( MainActivityHelper.loadLinks(this, NUJABES) );
-        musicHolder.add( MainActivityHelper.loadLinks(this, FUTURE_FUNK) );
-        musicHolder.add( MainActivityHelper.loadLinks(this, LIKED) );
-        Log.d(TAG, "loaded " + musicHolder.get(NUJABES).size() + " url's from: " + NUJABES);
-        Log.d(TAG, "loaded " + musicHolder.get(FUTURE_FUNK).size() + " url's from: " + FUTURE_FUNK);
-        Log.d(TAG, "loaded " + musicHolder.get(LIKED).size() + " url's from: " + LIKED);
-    }
-
-    private boolean updateHeartSettings(int heartId, boolean updateLikedTo) {
-
-        menu.findItem(R.id.heart).setIcon(heartId);
-        isLikedAlbum = updateLikedTo;
-
-        return true;
-
-    }
-
-    // Destroys the old webView when it updates to a new one, then loads a new url
-    // from whatever genre specified
-    private void updateContentView(int position, boolean setIsLiked) {
-
-        if(firstTimeAppOpened)
-            firstTimeAppOpened = false;
-
-        // Update the main content by replacing fragments
-        FragmentManager fragmentManager = getSupportFragmentManager();
-
-        // Free up some RAM, also it might be a little redundant
-        if(lastFragment != null) {
-            Log.d(TAG, "updateContentView lastFragment != null");
-            lastFragment.kill();
-            lastFragment.onDestroy();
-        }
-
-        switch (position) {
-            case 0:     lastFragment = MusicFinderFragment.newInstance(NUJABES, position + 1);
-                        break;
-            case 1:     lastFragment = MusicFinderFragment.newInstance(FUTURE_FUNK, position + 1);
-                        break;
-            case 2:     lastFragment = MusicFinderFragment.newInstance(LIKED, position + 1);
-                        break;
-        }
-
-        fragmentManager.beginTransaction().replace(R.id.container, lastFragment).commit();
-        isLikedAlbum = setIsLiked;
-        //Don't worry about it, no one needs to know that this does
-        springCleaning();
-    }
-
-    private boolean updateLiked(int addToGenre, int removeFromGenre, boolean updateLikedTo, int heartId) {
-
-        String currUrl = lastFragment.getCurrentUrl();
-
-        musicHolder.update(currUrl, addToGenre, removeFromGenre);
-        updateHeartSettings(heartId, updateLikedTo);
-
-        if (updateLikedTo)
-            Toast.makeText(this, "Added to Liked Playlist", Toast.LENGTH_SHORT).show();
-        else if (musicHolder.isLikedEmpty() && currPosition == LIKED_POSITION) {
-            Toast.makeText(this, "There are no more liked albums", Toast.LENGTH_SHORT).show();
-            mNavigationDrawerFragment.openDrawer();
-        }else
-            Toast.makeText(this, "Removed from Liked Playlist", Toast.LENGTH_SHORT).show();
-
-        logInfoForUpdateLiked(updateLikedTo, currUrl);
-        return true;
-    }
-
-    // Suggest to JVM that there's some garbage that needs to be collected. However, it's okay
-    // if he doesn't listen to us
-    private void springCleaning() {
-        System.gc();
-    }
 
     // Info for me. This'll be deleted along with all log statements
     private void logInfoForUpdateLiked(boolean updateBooleansTo, String currUrl) {
