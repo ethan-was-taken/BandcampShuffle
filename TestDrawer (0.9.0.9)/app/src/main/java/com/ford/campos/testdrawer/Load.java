@@ -3,6 +3,7 @@ package com.ford.campos.testdrawer;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,9 +12,8 @@ import java.util.ArrayList;
 
 /**
  * Round 1 refactoring: 2/4/18
- *
+ * <p>
  * Todo: fix setMusicHolderArraySize(); it's inexcusable.
- *
  */
 
 public class Load {
@@ -55,7 +55,7 @@ public class Load {
      */
     private void checkIfFileExists() {
         if (!hasFile(context)) {
-            Log.wtf( TAG, "Trying to load a non-existent file", new RuntimeException() );
+            Log.wtf(TAG, "Trying to load a non-existent file", new RuntimeException());
         }
     }
 
@@ -69,8 +69,9 @@ public class Load {
      * @throws RuntimeException if the URL's weren't able to be retrieved
      */
     private void setLinksArray() {
-        try { getLinksFromFile(); }
-        catch (IOException e) {
+        try {
+            getLinksFromFile();
+        } catch (IOException e) {
             Log.wtf(TAG, "couldn't get links from file", new RuntimeException());
         }
     }
@@ -105,21 +106,24 @@ public class Load {
     private void closeReader(BufferedReader reader) {
         if (reader != null) {
             Log.d(TAG, "reader != null, closing");
-            try { reader.close(); }
-            catch (IOException e) { Log.d(TAG, "reader!=null, IOException"); }
+            try {
+                reader.close();
+            } catch (IOException e) {
+                Log.d(TAG, "reader!=null, IOException");
+            }
         }
     }
 
     /**
      * Todo: fix this!
-     *
+     * <p>
      * This is really bad, it'll need to be refactored; BUT the rest of the app needs to be
      * refactored first, so ill come back to it later
      */
     private void setMusicHolderArraySize() {
         int index = MainActivityHelper.getPositionForArray(filename);
         Log.d(TAG, filename + " loaded " + linksArray.size());
-        ( (MainActivity)context ).setOriginalSizes(index, linksArray.size());
+        ((MainActivity) context).setOriginalSizes(index, linksArray.size());
     }
 
 }

@@ -10,19 +10,19 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
+
 import java.util.ArrayList;
 
 /**
  * If anyone is reading this: refactoring MainActivity is going to take a
  * while, please bare with me.
- *
+ * <p>
  * First we need to refactor the class's methods (which will take forever), then after
  * that we need to break this class into multiple classes, which, again, will take forever :C
- *
+ * <p>
  * I appreciate your patience <3
- *
+ * <p>
  * Halfway through refactoring round 1: 2/5/18
- *
  */
 
 public class MainActivity extends AppCompatActivity implements NavigationDrawerFragment.NavigationDrawerCallbacks {
@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     private final String LIKED = "liked";
     private final int LIKED_POSITION = 2;
 
-    private SaveVersionTwo save = new SaveVersionTwo(this);
+    private Save save = new Save(this);
     private MusicFinderFragment lastFragment;
     private NavigationDrawerFragment mNavigationDrawerFragment;
     private CharSequence mTitle;
@@ -61,9 +61,9 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     }
 
     private void addMusic() {
-        musicHolder.add( MainActivityHelper.loadLinks(this, NUJABES) );
-        musicHolder.add( MainActivityHelper.loadLinks(this, FUTURE_FUNK) );
-        musicHolder.add( MainActivityHelper.loadLinks(this, LIKED) );
+        musicHolder.add(MainActivityHelper.loadLinks(this, NUJABES));
+        musicHolder.add(MainActivityHelper.loadLinks(this, FUTURE_FUNK));
+        musicHolder.add(MainActivityHelper.loadLinks(this, LIKED));
         Log.d(TAG, "loaded " + musicHolder.get(NUJABES).size() + " url's from: " + NUJABES);
         Log.d(TAG, "loaded " + musicHolder.get(FUTURE_FUNK).size() + " url's from: " + FUTURE_FUNK);
         Log.d(TAG, "loaded " + musicHolder.get(LIKED).size() + " url's from: " + LIKED);
@@ -106,12 +106,12 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         }
 
         // No liked albums; Closes the navigation drawer
-        if( position == LIKED_POSITION && musicHolder.isLikedEmpty() ) {
+        if (position == LIKED_POSITION && musicHolder.isLikedEmpty()) {
             Toast.makeText(this, "You have no liked albums", Toast.LENGTH_SHORT).show();
             return;                                                                                 // Returning closes the navigation drawer
         }
 
-        if(position == LIKED_POSITION)
+        if (position == LIKED_POSITION)
             updateContentView(position, true);
         else
             updateContentView(position, false);
@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
      */
     private void updateContentView(int genrePosition, boolean setIsLiked) {
 
-        if(firstTimeAppOpened)
+        if (firstTimeAppOpened)
             firstTimeAppOpened = false;
 
         killPrevFragment();
@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
      * Free up some RAM, also it might be a little redundant
      */
     private void killPrevFragment() {
-        if(lastFragment == null)
+        if (lastFragment == null)
             return;
 
         Log.d(TAG, "updateContentView lastFragment != null");
@@ -153,15 +153,18 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     private void setFragmentToGenre(int genreIndex) {
         switch (genreIndex) {
-            case 0: lastFragment = MusicFinderFragment.newInstance(
+            case 0:
+                lastFragment = MusicFinderFragment.newInstance(
                         NUJABES, genreIndex + 1);
-                    break;
-            case 1: lastFragment = MusicFinderFragment.newInstance(
+                break;
+            case 1:
+                lastFragment = MusicFinderFragment.newInstance(
                         FUTURE_FUNK, genreIndex + 1);
-                    break;
-            case 2: lastFragment = MusicFinderFragment.newInstance(
+                break;
+            case 2:
+                lastFragment = MusicFinderFragment.newInstance(
                         LIKED, genreIndex + 1);
-                    break;
+                break;
         }
         // Update the main content by replacing fragments
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -204,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
              */
 
             // If there are no more liked albums: open the drawer and don't do anything;
-            if( currPosition == LIKED_POSITION && musicHolder.isLikedEmpty() ) {
+            if (currPosition == LIKED_POSITION && musicHolder.isLikedEmpty()) {
                 mNavigationDrawerFragment.openDrawer();
                 return true;
             }
@@ -213,8 +216,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
         } else if (id == R.id.heart) {
             handleHeartButtonClick();
-        }
-        else
+        } else
             return super.onOptionsItemSelected(item);
 
         return true;
@@ -250,7 +252,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
      * the liked playlist.
      */
     private void setHeartIcon() {
-        if(currPosition == LIKED_POSITION)
+        if (currPosition == LIKED_POSITION)
             updateHeartSettings(R.drawable.heart_filled, true);
         else
             updateHeartSettings(R.drawable.heart_empty, false);
@@ -266,7 +268,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
      * Updates the heart button to the correct icon/
      */
     private void handleHeartButtonClick() {
-        if(isLikedAlbum)
+        if (isLikedAlbum)
             updateLiked(-1, LIKED_POSITION,
                     false, R.drawable.heart_empty);
         else
@@ -285,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         else if (musicHolder.isLikedEmpty() && currPosition == LIKED_POSITION) {
             Toast.makeText(this, "There are no more liked albums", Toast.LENGTH_SHORT).show();
             mNavigationDrawerFragment.openDrawer();
-        }else
+        } else
             Toast.makeText(this, "Removed from Liked Playlist", Toast.LENGTH_SHORT).show();
 
         logInfoForUpdateLiked(updateLikedTo, currUrl);
@@ -305,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     @Override
     public void onBackPressed() {
-        if( mNavigationDrawerFragment.isDrawerOpen() )
+        if (mNavigationDrawerFragment.isDrawerOpen())
             mNavigationDrawerFragment.closeDrawer();
         else
             super.onBackPressed();
@@ -322,14 +324,18 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         genreIndex -= 1;
 
         switch (genreIndex) {
-            case 0:     mTitle = getString(R.string.title_section1);
-                        break;
-            case 1:     mTitle = getString(R.string.title_section2);
-                        break;
-            case 2:     mTitle = getString(R.string.title_section3);
-                        break;
-            default:    mTitle = getString(R.string.app_name);
-                        break;
+            case 0:
+                mTitle = getString(R.string.title_section1);
+                break;
+            case 1:
+                mTitle = getString(R.string.title_section2);
+                break;
+            case 2:
+                mTitle = getString(R.string.title_section3);
+                break;
+            default:
+                mTitle = getString(R.string.app_name);
+                break;
         }
 
     }

@@ -31,7 +31,8 @@ public class MusicFinderFragment extends Fragment {
 
     private int lastRandomNum = -1;
 
-    public MusicFinderFragment() { }
+    public MusicFinderFragment() {
+    }
 
     /**
      * Returns a new instance of this fragment for the given section
@@ -77,12 +78,12 @@ public class MusicFinderFragment extends Fragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        ( (MainActivity) activity ).onSectionAttached(getArguments().getInt(ARG_SECTION_NUMBER));
+        ((MainActivity) activity).onSectionAttached(getArguments().getInt(ARG_SECTION_NUMBER));
     }
 
     public void getAndLoadRandomAlbum(ArrayList<String> linksArray) {
 
-        if(linksArray.size() == 0)
+        if (linksArray.size() == 0)
             return;
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -103,11 +104,11 @@ public class MusicFinderFragment extends Fragment {
         currentUrl = linksArray.get(index);
 
         Log.d(TAG, "current url: " + currentUrl.substring(0, currentUrl.length() - 1) +
-                " from genre position: " + currentUrl.charAt(currentUrl.length() - 1) );
+                " from genre position: " + currentUrl.charAt(currentUrl.length() - 1));
 
         //If true, this means that we're in the liked playlist and there's only one liked album,
         //so we don't bother reloading it
-        if ( currentUrl.substring(0, currentUrl.length() - 1).equals( webView.getUrl() ) )
+        if (currentUrl.substring(0, currentUrl.length() - 1).equals(webView.getUrl()))
             return;
 
         webView.loadUrl(currentUrl.substring(0, currentUrl.length() - 1));

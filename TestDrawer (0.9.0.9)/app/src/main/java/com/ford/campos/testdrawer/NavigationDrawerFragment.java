@@ -110,7 +110,7 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerRecyclerView = (RecyclerView) layout.findViewById(R.id.recyclerview_navigation_drawer);
 
         ArrayList<Information> sectionInformation =
-                NavigationDrawerSections.getSectionInformation( getActivity() );
+                NavigationDrawerSections.getSectionInformation(getActivity());
         adapter = new RecyclerViewArrayAdapter(getActivity(), sectionInformation);                  // Might want to move this to onActivityCreated()
 
         mDrawerRecyclerView.setAdapter(adapter);
@@ -118,44 +118,7 @@ public class NavigationDrawerFragment extends Fragment {
 
         return layout;
     }
-    /*
-    private ArrayList<Information> getData() {
 
-        ArrayList<Information> data = new ArrayList<>();
-
-        int[] icons = {
-                R.mipmap.nujabes,
-                R.mipmap.future_funk,
-                R.mipmap.liked
-        };
-
-        String[] text = {
-                getString(R.string.title_section1),
-                getString(R.string.title_section2),
-                getString(R.string.title_section3)
-        };
-
-        boolean[] active = {
-                true,
-                false,
-                false,
-        };
-
-        for (int i = 0; (i < text.length) && (i < icons.length); i++) {
-
-            Information current = new Information(
-                    icons[i],
-                    text[i],
-                    active[i]
-            );
-
-            data.add(current);
-
-        }
-
-        return data;
-    }
-    */
     public boolean isDrawerOpen() {
         return Drawer != null && Drawer.isDrawerOpen(mFragmentContainerView);
     }
@@ -172,7 +135,7 @@ public class NavigationDrawerFragment extends Fragment {
         mRecyclerView.setHasFixedSize(true);                                                        // Letting the system know that the list objects are of fixed size
 
         ArrayList<Information> sectionInformation =
-                NavigationDrawerSections.getSectionInformation( getActivity() );
+                NavigationDrawerSections.getSectionInformation(getActivity());
         adapter = new RecyclerViewArrayAdapter(getActivity(), sectionInformation);
         //adapter = new RecyclerViewArrayAdapter(getActivity(), getData());                           // Creating the Adapter of MyAdapter class
         mRecyclerView.setAdapter(adapter);                                                          // Setting the adapter to RecyclerView
@@ -224,7 +187,9 @@ public class NavigationDrawerFragment extends Fragment {
             @Override
             public void onDrawerClosed(View drawerView) {
 
-                if (!isAdded()) { return; }
+                if (!isAdded()) {
+                    return;
+                }
 
                 getActivity().supportInvalidateOptionsMenu(); // calls onPrepareOptionsMenu()
                 super.onDrawerClosed(drawerView);
@@ -233,7 +198,9 @@ public class NavigationDrawerFragment extends Fragment {
             @Override
             public void onDrawerOpened(View drawerView) {
 
-                if (!isAdded()) { return; }
+                if (!isAdded()) {
+                    return;
+                }
 
 
                 if (!mUserLearnedDrawer) {

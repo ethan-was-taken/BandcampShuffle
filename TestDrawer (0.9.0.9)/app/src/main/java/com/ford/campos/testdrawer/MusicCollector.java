@@ -1,205 +1,136 @@
 package com.ford.campos.testdrawer;
 
-import android.util.Log;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.FormatFlagsConversionMismatchException;
 import java.util.HashSet;
 
+/**
+ * Still needs a second, thrid, forth, etc round of refactoring :C
+ * Until I do the other classes, that'll do pig... that,ll do
+ */
 public class MusicCollector {
 
-    private final String TAG = "MusicCollector";
-    private final String LIKED = "liked";
     private final String NUJABES = "nujabes";
     private final String JAZZ_HOP = "jazzy-hip-hop";
 
     private HashSet<String> links = new HashSet<>();
     private String genre;
-    private int position;
+    private int currGenreIndex;
+
+    private boolean isFirstTime;
 
     public MusicCollector(String genre) {
         this.genre = genre;
-        position = MainActivityHelper.getPositionForArray(this.genre);
+        currGenreIndex = MainActivityHelper.getPositionForArray(this.genre);
     }
 
     public ArrayList<String> collect(ArrayList<String> oldLinks, ArrayList<String> likedAlbums) {
-
         links.addAll(oldLinks);
-        Log.d(TAG, "Added " + links.size() + " url's to " + genre);
-
-        return removeLikedFromUpdated(collect(false), likedAlbums);
+        ArrayList<String> newAlbums = collect(false);
+        return removeLikedFromUpdated(newAlbums, likedAlbums);
     }
 
-    // Could do this with asynch again, but for when it isn't the first time, so that it updates
-    // links in the background
+    /**
+     * Ideally this would be done in the background, but I'm not too sure how that would be done
+     */
     public ArrayList<String> collect(boolean firstTime) {
 
-        int upperBound = getUpperBound(firstTime);
-        Log.d(TAG, "upperBound: " + upperBound);
+        isFirstTime = firstTime;
+        int upperBound = getUpperBound();
 
         //Gets the links from pages 1 - 10; there are no duplicates
         for (int i = 1; i < upperBound; i++) {
-
-            /*
-            if( genre.equals(NUJABES) ) {
-
-                boolean breakOne = getLinks(i, genre, firstTime);
-                boolean breakTwo = getLinks(i, JAZZ_HOP, firstTime);
-
-                if(breakOne && breakTwo)
-                    break;
-
-            } else if( getLinks(i, genre, firstTime) )
-                break;
-             */
-
-            if ( getLinks(i, genre, firstTime) )
-                break;
-
-            //For the nujabes tag
-            if (genre.equals(NUJABES) && getLinks(i, JAZZ_HOP, firstTime))
-                break;
-
+            try { getAlbumLinks(i, genre); }
+            catch (IOException e) { break; }
+            handleSpecialCaseNujabes(i);
         }
-
-        Log.d(TAG, genre + ".size(): " + links.size());
 
         return new ArrayList<>(links);
 
     }
 
-    /**
-     * Private/Protected methods
-     */
-
-
-    private int getUpperBound(boolean firstTime) {
-
-        int upperBound = 11;
-
-        if (genre.equals(NUJABES))
-            upperBound = 6;
-
-        //There aren't that many new albums added in a week
-        //Remember to change back to 5
-        if ( !firstTime && genre.equals(NUJABES) )
-            upperBound = 4;
-        else if(!firstTime)
-            upperBound = 6;
-
-        return upperBound;
+    private int getUpperBound() {
+        return (genre.equals(NUJABES) || !isFirstTime) ? 6 : 11;
     }
 
-    private boolean getLinks(int index, String genreToGet, boolean firstTime) {
+    private void getAlbumLinks(int index, String genreToGet) throws IOException {
+        String url = getUrl(index, genreToGet);
+        Document doc = Jsoup.connect(url).timeout(5000).get();
+        addAlbumUrlToLinks(doc);
+    }
 
-        Document doc;
-
-        try {
-
-            String url = "http://bandcamp.com/tag/" + genreToGet + "?page=" + index;
-
-            if (!firstTime)
-                url += "&sort_field=date";
-
-/*
-            String url = "http://bandcamp.com/tag/" + genreToGet + "?page=" + index + "&sort_field=date";
-
-            if (firstTime)
-                url = "http://bandcamp.com/tag/" + genreToGet + "?page=" + index;
-*/
-            long start = System.currentTimeMillis();
-            doc = Jsoup.connect(url).timeout(5000).get();
-            long end = System.currentTimeMillis();
-            long timeTook = end - start;
-            Log.d(TAG, "time it took to scrape 1 page: " + timeTook);
-
-        } catch (IOException e) { return true; }
-
-        //adds the links from page i to links
-        int count = add(doc);
-
-        Log.d(TAG, "added: " + count + " to " + genreToGet);
-        return false;
-
+    private String getUrl(int index, String genreToGet) {
+        StringBuilder url = new
+                StringBuilder("http://bandcamp.com/tag/" + genreToGet + "?page=" + index);
+        if (!isFirstTime)
+            url.append("&sort_field=date");
+        return url.toString();
     }
 
     // Adds album urls to the HashSet, and adds the genre number to the end of the url, so we know
-    // where to add the url if the user unlikes the album
-    private int add(Document doc) {
+    // where to addAlbumUrlToLinks the url if the user unlikes the album
+    private int addAlbumUrlToLinks(Document doc) {
 
-        Elements newsHeadlines = doc.select("a");
+        Elements headlines = doc.select("a");
         int count = 0;
 
-        long start = System.currentTimeMillis();
-
-        for (int i = 0; i < newsHeadlines.size(); i++) {
-
-            String temp = newsHeadlines.get(i).attr("abs:href");
-
-            if (  /*temp.contains("http://bandcamp.com") ||*/
-                  /*temp.contains("https://bandcamp.com") ||*/
-                    temp.contains("://bandcamp.com") || temp.contains("\\n"))
-                continue;
-            else {
+        for (int i = 0; i < headlines.size(); i++) {
+            String temp = headlines.get(i).attr("abs:href");
+            if (!isInvalidUrl(temp)){
                 count++;
-                links.add(temp + position);
+                links.add(temp + currGenreIndex);
             }
-
         }
-
-        long end = System.currentTimeMillis();
-        long timeTook = end - start;
-
-        Log.d(TAG, "Time it took to add urls to array: " + timeTook);
 
         return count;
+
     }
 
-    private ArrayList<String> removeLikedFromUpdated(ArrayList<String> updatedLinks,
+    private boolean isInvalidUrl(String temp) {
+        return temp.contains("://bandcamp.com") || temp.contains("\\n");
+    }
+
+    private void handleSpecialCaseNujabes(int i) {
+        if (!genre.equals(NUJABES))
+            return;
+        try { getAlbumLinks(i, JAZZ_HOP); }
+        catch (IOException e) { }
+    }
+
+    private ArrayList<String> removeLikedFromUpdated(ArrayList<String> albumLinks,
                                                      ArrayList<String> liked) {
 
-        String TAG = "updateOldLinks";
+        if (liked.size() == 0)
+            return albumLinks;
 
-        //int updatedLinksGenre = Character.getNumericValue( (updatedLinks.get(0).charAt(updatedLinks.get(0).length() - 1) ) );
-
-        if(liked.size() == 0)
-            return updatedLinks;
-
-        Collections.sort(updatedLinks);
-
-        for(String currLiked : liked) {
-
-            Log.d(TAG, "trying to remove liked from updated links");
-
-            int currLikedGenre = currLiked.charAt(currLiked.length() - 1) - 48;
-
-            if(currLikedGenre == position)
-                updatedLinks = removeCurrentUrl(updatedLinks, currLiked);
-
+        HashSet<String> currentUrls = new HashSet<>(albumLinks);
+        for (String currLiked : liked) {
+            int currAlbumGenreFromLiked = getGenre(currLiked);
+            if (currAlbumGenreFromLiked == currGenreIndex)
+                removeCurrentUrl(currentUrls, currLiked);
         }
 
-        return updatedLinks;
+        return hashSetToArrayList(currentUrls);
     }
 
-    private ArrayList<String> removeCurrentUrl(ArrayList<String> updatedLinks, String currLikedUrl) {
+    private int getGenre(String currLiked) {
+        return currLiked.charAt(currLiked.length() - 1) - 48;
+    }
 
-        String TAG = "updateOldLinks";
-        Log.d(TAG, "Updating old links...");
+    private void removeCurrentUrl(HashSet<String> currUrls, String currLikedUrl) {
+        if (currUrls.contains(currLikedUrl))
+            currUrls.remove(currLikedUrl);
+    }
 
-        int position = Collections.binarySearch(updatedLinks, currLikedUrl);
-        if(position < 0)
-            return updatedLinks;
-
-        if( updatedLinks.get(position).equals(currLikedUrl) ) {
-            Log.d(TAG, updatedLinks.get(position) + " == " + currLikedUrl + "; removing from pos: " + position);
-            updatedLinks.remove(position);
-        }
-
-        return updatedLinks;
+    private ArrayList<String> hashSetToArrayList(HashSet<String> currentUrls) {
+        ArrayList<String> res = new ArrayList<>();
+        res.addAll(currentUrls);
+        return res;
     }
 
 }

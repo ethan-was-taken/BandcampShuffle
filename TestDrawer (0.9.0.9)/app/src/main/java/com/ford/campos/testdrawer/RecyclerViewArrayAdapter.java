@@ -38,7 +38,7 @@ public class RecyclerViewArrayAdapter extends RecyclerView.Adapter<RecyclerViewA
 
         int layout;
 
-        if(viewType == TYPE_INACTIVE)
+        if (viewType == TYPE_INACTIVE)
             layout = R.layout.custom_row;
         else
             layout = R.layout.custom_row_active;
@@ -70,7 +70,7 @@ public class RecyclerViewArrayAdapter extends RecyclerView.Adapter<RecyclerViewA
 
         Log.d(TAG, "getItemViewType, info.isActive(): " + info.isActive());
 
-        if( info.isActive() )
+        if (info.isActive())
             return TYPE_ACTIVE;
         else
             return TYPE_INACTIVE;

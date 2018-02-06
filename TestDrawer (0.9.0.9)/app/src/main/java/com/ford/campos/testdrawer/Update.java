@@ -16,9 +16,9 @@ import java.util.Calendar;
  * Round 1 refactoring: 2/4/18
  */
 
-public class CheckForUpdate {
+public class Update {
 
-    private static final String TAG = "CheckForUpdate";
+    private static final String TAG = "Update";
     private static final long WEEK_MILLISECONDS = 604800000;
 
     /**

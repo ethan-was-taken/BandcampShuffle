@@ -11,9 +11,8 @@ import android.widget.ImageView;
 
 /**
  * Round 1 refactoring: 2/5/18
- *
+ * <p>
  * Todo: figure out a better name for frameCount
- *
  */
 public class LoadingScreen {
 
@@ -78,7 +77,7 @@ public class LoadingScreen {
 
     public void stopAnimation() {
 
-        if(imageView == null || animation == null)
+        if (imageView == null || animation == null)
             return;
 
         animation.setDuration(0);

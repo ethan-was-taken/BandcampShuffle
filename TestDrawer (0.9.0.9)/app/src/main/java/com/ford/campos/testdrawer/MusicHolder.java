@@ -62,7 +62,7 @@ public class MusicHolder {
             addToGenre = readd(currUrl);
         // If it's still -1, something is srsly wrong!
         if (addToGenre == -1)
-            Log.wtf( TAG, "addToGenre == -1", new RuntimeException() );
+            Log.wtf(TAG, "addToGenre == -1", new RuntimeException());
 
         musicArrayHolder.get(removeFromGenre).remove(currUrl);
         musicArrayHolder.get(addToGenre).add(currUrl);
