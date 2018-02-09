@@ -93,6 +93,9 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
     }
 
+    /**
+     * todo: refactor this :C
+     */
     @Override
     public void onNavigationDrawerItemSelected(int position) {
 
@@ -152,20 +155,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     }
 
     private void setFragmentToGenre(int genreIndex) {
-        switch (genreIndex) {
-            case 0:
-                lastFragment = MusicFinderFragment.newInstance(
-                        NUJABES, genreIndex + 1);
-                break;
-            case 1:
-                lastFragment = MusicFinderFragment.newInstance(
-                        FUTURE_FUNK, genreIndex + 1);
-                break;
-            case 2:
-                lastFragment = MusicFinderFragment.newInstance(
-                        LIKED, genreIndex + 1);
-                break;
-        }
+        lastFragment = MusicFinderFragment.newInstance(genreIndex + 1);
         // Update the main content by replacing fragments
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.container, lastFragment).commit();
@@ -318,7 +308,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
      *
      * @param genreIndex the position of the current genre we are in, in the nav drawer
      */
-    public void onSectionAttached(int genreIndex) {
+    public void setToolbarTitle(int genreIndex) {
 
         // the index we're passed is 1's based
         genreIndex -= 1;

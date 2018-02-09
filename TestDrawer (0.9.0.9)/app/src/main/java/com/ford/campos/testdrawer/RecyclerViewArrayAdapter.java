@@ -22,7 +22,6 @@ public class RecyclerViewArrayAdapter extends RecyclerView.Adapter<RecyclerViewA
     private static final int TYPE_INACTIVE = 0;
     private static final int TYPE_ACTIVE = 1;
 
-    //1 b/c thats where the first information object thing is, 0 is where the section is
     private int oldPosition = 0;
 
     public RecyclerViewArrayAdapter(Context context, ArrayList<Information> data) {

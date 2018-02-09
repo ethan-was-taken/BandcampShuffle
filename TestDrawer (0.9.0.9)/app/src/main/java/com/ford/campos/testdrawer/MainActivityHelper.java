@@ -11,6 +11,9 @@ import java.util.ArrayList;
  * <p>
  * One day this class will get broken up and everything will be okay with the world... except
  * for the second part
+ *
+ * Potential fix: make this a super class and have MainActivity && MusicHolder extend it!??!
+ *
  */
 public class MainActivityHelper {
 
@@ -20,8 +23,7 @@ public class MainActivityHelper {
     private static final String LIKED = "liked";
     private static final int LIKED_POSITION = 2;
 
-
-    public static ArrayList<String> loadLinks(Context context, String genre/*, boolean forceUpdate*/) {
+    public static ArrayList<String> loadLinks(Context context, String genre) {
 
         boolean needsUpdate = Update.needsUpdate(genre, context);
         Save save = new Save(context);
@@ -43,17 +45,16 @@ public class MainActivityHelper {
 
     public static int getPositionForArray(String filename) {
         switch (filename) {
-            case NUJABES:
-                return 0;
-            case FUTURE_FUNK:
-                return 1;
-            case LIKED:
-                return LIKED_POSITION;
-            default:
-                return 0;
+            case NUJABES:       return 0;
+            case FUTURE_FUNK:   return 1;
+            case LIKED:         return LIKED_POSITION;
+            default:            return 0;
         }
     }
 
+    /**
+     * Todo: refactor this horrid piece of code
+     */
     private static void collectAndSaveLinks(final boolean isFirstTime, final String genre,
                                             final Save save, final Load load) {
 

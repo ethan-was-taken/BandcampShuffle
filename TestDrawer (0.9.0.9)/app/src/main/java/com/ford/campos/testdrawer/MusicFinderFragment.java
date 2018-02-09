@@ -1,10 +1,7 @@
 package com.ford.campos.testdrawer;
 
 import android.app.Activity;
-import android.content.SharedPreferences;
-import android.media.AudioManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,17 +9,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.Random;
+
+/**
+ * Round 1 refactoring: 2/7/18
+ */
 
 public class MusicFinderFragment extends Fragment {
 
     private static final String TAG = "MusicFinderFragment";
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static final String LAST_URL = "url";
+    private static final int FRAME_COUNT = 120;
+    private static final int ROTATION_DURATION = 1000;
 
     private LoadingScreen loadingScreen;
     private boolean firstPass = true;
@@ -38,7 +40,7 @@ public class MusicFinderFragment extends Fragment {
      * Returns a new instance of this fragment for the given section
      * number.
      */
-    public static MusicFinderFragment newInstance(String genre, int sectionNumber) {
+    public static MusicFinderFragment newInstance(int sectionNumber) {
         MusicFinderFragment fragment = new MusicFinderFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_SECTION_NUMBER, sectionNumber);
@@ -47,38 +49,46 @@ public class MusicFinderFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        Log.d(TAG, "onCreateView");
-        View rootView = inflater.inflate(R.layout.fragment_music_finder, container, false);
-        ImageView loadingImageView = (ImageView) rootView.findViewById(R.id.loading);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        loadingScreen = new LoadingScreen(
-                getActivity(),
-                loadingImageView,
-                R.drawable.spinner_small,
-                120,
-                1000,
-                R.anim.progress_anim
-        );
-
-        webView = new WebView(getActivity().getApplicationContext());
-        webView = (WebView) rootView.findViewById(R.id.internet_web_view);
-        webView.getSettings().setJavaScriptEnabled(true);
-
-        int genrePosition = getArguments().getInt(ARG_SECTION_NUMBER) - 1;
-        Log.d(TAG, "genrePosition: " + genrePosition);
-        Log.d(TAG, "MusicHolder.get(genrePosition).size(): " +
-                ((MainActivity) getActivity()).getMusic(genrePosition).size());
-        getAndLoadRandomAlbum(((MainActivity) getActivity()).getMusic(genrePosition));
+        View rootView = getRootView(inflater, container);
+        setLoadingScreen(rootView);
+        setWebView(rootView);
+        getAndLoadRandomAlbum();
 
         return rootView;
     }
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        ((MainActivity) activity).onSectionAttached(getArguments().getInt(ARG_SECTION_NUMBER));
+    private View getRootView(LayoutInflater inflater, ViewGroup container) {
+        return inflater.inflate(R.layout.fragment_music_finder, container, false);
+    }
+
+    private void setLoadingScreen(View rootView) {
+        ImageView loadingImageView = (ImageView) rootView.findViewById(R.id.loading);
+        loadingScreen = new LoadingScreen(
+                getActivity(),
+                loadingImageView,
+                R.drawable.spinner_small,
+                FRAME_COUNT,
+                ROTATION_DURATION,
+                R.anim.progress_anim
+        );
+    }
+
+    private void setWebView(View rootView) {
+        webView = new WebView(getActivity().getApplicationContext());
+        webView = (WebView) rootView.findViewById(R.id.internet_web_view);
+        webView.getSettings().setJavaScriptEnabled(true);
+    }
+
+    /**
+     * A basic wrapper method for getAndLoadRandomAlbum(ArrayList<String> linksArray), so we don't have to
+     * muddy up onCreateView()
+     */
+    private void getAndLoadRandomAlbum() {
+        int genrePosition = getArguments().getInt(ARG_SECTION_NUMBER) - 1;
+        ArrayList<String> linksArray = ((MainActivity) getActivity()).getMusic(genrePosition);
+        getAndLoadRandomAlbum(linksArray);
     }
 
     public void getAndLoadRandomAlbum(ArrayList<String> linksArray) {
@@ -86,6 +96,18 @@ public class MusicFinderFragment extends Fragment {
         if (linksArray.size() == 0)
             return;
 
+        handleAnimation();
+
+        setCurrentUrl(linksArray);
+
+        if (isInSingularLiked())
+            return;
+
+        webView.loadUrl(currentUrl.substring(0, currentUrl.length() - 1));
+
+    }
+
+    private void handleAnimation() {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -97,23 +119,57 @@ public class MusicFinderFragment extends Fragment {
                 }
             }
         });
+    }
 
-        //can be refactored
+    private void setCurrentUrl(ArrayList<String> linksArray) {
         int index = getRandomNumber(linksArray.size());
-
         currentUrl = linksArray.get(index);
+    }
 
-        Log.d(TAG, "current url: " + currentUrl.substring(0, currentUrl.length() - 1) +
-                " from genre position: " + currentUrl.charAt(currentUrl.length() - 1));
+    private void startAnimation() {
 
-        //If true, this means that we're in the liked playlist and there's only one liked album,
-        //so we don't bother reloading it
-        if (currentUrl.substring(0, currentUrl.length() - 1).equals(webView.getUrl()))
+        // We don't need to restart the loading screen every time this is called
+        if (!firstPass)
             return;
 
-        webView.loadUrl(currentUrl.substring(0, currentUrl.length() - 1));
-        Log.d(TAG, "getAndLoadRandomAlbum webView.getUrl:" + getCurrentUrl());
+        webView.setVisibility(View.INVISIBLE);
+        loadingScreen.startAnimation();
 
+        firstPass = false;
+
+    }
+
+    private void stopAnimation() {
+        webView.setVisibility(View.VISIBLE);
+        loadingScreen.stopAnimation();
+    }
+
+    private int getRandomNumber(int size) {
+
+        if (size == 1)
+            return 0;
+
+        Random random = new Random();
+        int rand = random.nextInt(size);
+        while (lastRandomNum == rand)
+            rand = random.nextInt(size);
+        lastRandomNum = rand;
+
+        return rand;
+
+    }
+
+    /**
+     * @return true if we're in the liked playlist and there's only one liked album
+     */
+    private boolean isInSingularLiked() {
+        return currentUrl.substring(0, currentUrl.length() - 1).equals(webView.getUrl());
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        ((MainActivity) activity).setToolbarTitle(getArguments().getInt(ARG_SECTION_NUMBER));
     }
 
     public String getCurrentUrl() {
@@ -141,51 +197,6 @@ public class MusicFinderFragment extends Fragment {
         webView.clearSslPreferences();
         webView.clearFormData();
         webView.clearMatches();
-    }
-
-    /**
-     * Private Methods
-     */
-
-    private void startAnimation() {
-
-        // We don't need to restart the loading screen everytime this is called
-        if (!firstPass)
-            return;
-
-        webView.setVisibility(View.INVISIBLE);
-        loadingScreen.startAnimation();
-
-        firstPass = false;
-
-    }
-
-    private void stopAnimation() {
-
-        webView.setVisibility(View.VISIBLE);
-        loadingScreen.stopAnimation();
-
-    }
-
-    private int getRandomNumber(int size) {
-
-        int rand;
-
-        if (size == 1)
-            rand = 0;
-        else {
-
-            Random random = new Random();
-            rand = random.nextInt(size);
-
-            while (lastRandomNum == rand)
-                rand = random.nextInt(size);
-
-            lastRandomNum = rand;
-
-        }
-
-        return rand;
     }
 
 }

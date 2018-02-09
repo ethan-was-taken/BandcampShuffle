@@ -65,8 +65,8 @@ public class MusicCollector {
     }
 
     private String getUrl(int index, String genreToGet) {
-        StringBuilder url = new
-                StringBuilder("http://bandcamp.com/tag/" + genreToGet + "?page=" + index);
+        StringBuilder url = new StringBuilder("http://bandcamp.com/tag/"
+                            + genreToGet + "?page=" + index);
         if (!isFirstTime)
             url.append("&sort_field=date");
         return url.toString();
