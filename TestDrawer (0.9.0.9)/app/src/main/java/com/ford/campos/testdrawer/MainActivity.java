@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     private void setupNavDrawer(Toolbar toolbar) {
         mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
+        mNavigationDrawerFragment.setup(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), toolbar);
     }
 
     /**
