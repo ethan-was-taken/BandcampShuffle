@@ -16,11 +16,22 @@ import java.util.Calendar;
 
 /**
  * Created by ethan on 8/26/2015.
+ *
+ *
  */
 public class Save {
+
     private final String TAG = "Save";
 
     private Context context;
+    private String filename;
+    private String lastUpdatedFilename;
+    private int position;
+    private ArrayList<String> linksArray;
+    private boolean isUpdating;
+
+    private OutputStream out;
+    private Writer writer;
 
     public Save(Context c) {
         context = c;
@@ -30,85 +41,34 @@ public class Save {
         return context;
     }
 
-    // Saves the links gathered to a txt file, if there is an IOException
-    // it returns false, otherwise true
+    /**
+     * Saves the links gathered to a .txt file, because there's no need to make this more
+     * complicated than that.
+     * @param filename
+     * @param linksArray
+     * @param isUpdating
+     * @return false if there's an IO exception or there was no need to save, otherwise true
+     */
     public boolean save(String filename, ArrayList<String> linksArray, boolean isUpdating) {
 
-        int position = MainActivityHelper.getPositionForArray(filename);
+        setGlobals(filename, linksArray, isUpdating);
 
-        String lastUpdatedFilename = filename + "-last-updated.txt";
-        filename = filename + ".txt";
-
-        Writer writer = null;
-
-        //try {
-        /**
-         * extracting this (the things below and up to the finally statement) and putting it in
-         * it's own method causes some big problems
-         */
-        ////////////////////////////////////////////////////////////////////////////////////////
-        //This section tells us whether or not we should delete the file
-        try {
-
-            int originalSize = ((MainActivity) context).getOriginalSizes(position);
-
-            if (linksArray.size() == originalSize)
-                return false;
-            else if (hasFile(context, filename) && hasFile(context, lastUpdatedFilename))
-                deleteFiles(filename, lastUpdatedFilename, isUpdating);
-
-        } catch (IndexOutOfBoundsException e) {
-            //We get here when we first start the program, so we don't need to delete the file
-            Log.d(TAG, "IndexOutOfBoundsException");
-        }
-        //
-        ////////////////////////////////////////////////////////////////////////////////////////
-
-        ////////////////////////////////////////////////////////////////////////////////////////
-        //This section writes info to a file
-        OutputStream out = null;
-        try {
-            out = context.openFileOutput(filename, Context.MODE_PRIVATE);
-        } catch (FileNotFoundException e) {
-        }
-
-        writer = new OutputStreamWriter(out);
-
-        // Write the links array to a file
-        try {
-
-            // Creates a file (with nothing in it) so we can check the last time it was
-            // modified
-            if (isUpdating)
-                createLastUpdatedFile(lastUpdatedFilename);
-
-            for (String s : linksArray) {
-                writer.write(s);
-                writer.write("\n");
-            }
-
-        } catch (IOException e) {
-            Log.d(TAG, "IOException trying to save. Returning false");
+        int originalSize = ((MainActivity) context).getOriginalSizes(position);
+        if (linksArray.size() == originalSize)
             return false;
-        }
 
-        Log.d("MusicCollector", "saved " + filename);
-        //
-        ////////////////////////////////////////////////////////////////////////////////////////
+        removeFile();
 
-        //} finally {
+        boolean wasWriteSuccessful = writeFile();
+        if (!wasWriteSuccessful)
+            return false;
 
         if (!closeWriter(writer))
             return false;
 
-        //}
+        updateOriginalSize();
 
-
-        //if the sizes change, then change originalSizes, so we know later if things have changed
-        //if (!isUpdating)
-        ((MainActivity) context).setOriginalSizes(position, linksArray.size());
-
-        if (!hasFile(context, filename))
+        if (!hasFile(this.filename))
             throw new RuntimeException(filename + " !exists");
         else
             Log.d(TAG, filename + " exists");
@@ -116,7 +76,64 @@ public class Save {
         return true;
     }
 
-    private void deleteFiles(String filename, String lastUpdatedFilename, boolean isUpdating) {
+    /**
+     * if the sizes change, then change originalSizes, so we know later if things have changed
+     * if (!isUpdating)
+     */
+    private void updateOriginalSize() {
+        ((MainActivity) context).setOriginalSizes(position, this.linksArray.size());
+    }
+
+    private boolean writeFile() {
+
+        out = null;
+        try { out = context.openFileOutput(filename, Context.MODE_PRIVATE); }
+        catch (FileNotFoundException e) { }
+
+        writer = new OutputStreamWriter(out);
+
+        try { writeLinksToFile(); }
+        catch (IOException e) {
+            Log.d(TAG, "IOException trying to save. Returning false");
+            return false;
+        }
+
+        Log.d("MusicCollector", "saved " + filename);
+        return true;
+
+    }
+
+    private void writeLinksToFile() throws IOException {
+        // Creates a file (with nothing in it) so we can check the last time it was
+        // modified
+        if (isUpdating)
+            createLastUpdatedFile();
+
+        for (String s : linksArray) {
+            writer.write(s);
+            writer.write("\n");
+        }
+    }
+
+    private void setGlobals(String filename, ArrayList<String> linksArray, boolean isUpdating) {
+        position = MainActivityHelper.getPositionForArray(filename);
+        lastUpdatedFilename = filename + "-last-updated.txt";
+        this.linksArray = linksArray;
+        this.filename = filename + ".txt";
+        this.isUpdating = isUpdating;
+    }
+
+    private void removeFile() {
+        try {
+            if (hasFile(filename) && hasFile(lastUpdatedFilename))
+                deleteFiles();
+        } catch (IndexOutOfBoundsException e) {
+            //We get here when we first start the program, so we don't need to delete the file
+            Log.d(TAG, "IndexOutOfBoundsException");
+        }
+    }
+
+    private void deleteFiles() {
 
         context.deleteFile(filename);
         Log.d(TAG, "deleted: " + filename);
@@ -128,18 +145,17 @@ public class Save {
 
     }
 
-    private void createLastUpdatedFile(String lastUpdatedFilename) {
+    private void createLastUpdatedFile() {
 
         OutputStream outTwo = null;
         try {
             outTwo = context.openFileOutput(lastUpdatedFilename, Context.MODE_PRIVATE);
-        } catch (FileNotFoundException e) {
-        }
+        } catch (FileNotFoundException e) { }
 
         Writer writerTwo = new OutputStreamWriter(outTwo);
         closeWriter(writerTwo);
 
-        if (!hasFile(context, lastUpdatedFilename)) {
+        if (!hasFile(lastUpdatedFilename)) {
             throw new RuntimeException(lastUpdatedFilename + " doesn't exist, even " +
                     "though it should");
         }
@@ -150,17 +166,14 @@ public class Save {
     private boolean closeWriter(Writer writer) {
 
         if (writer != null) {
-            try {
-                writer.close();
-            } catch (IOException e) {
-                return false;
-            }
+            try { writer.close(); }
+            catch (IOException e) { return false; }
         }
 
         return true;
     }
 
-    private boolean hasFile(Context context, String filename) {
+    private boolean hasFile(String filename) {
         return context.getFileStreamPath(filename).exists();
     }
 
