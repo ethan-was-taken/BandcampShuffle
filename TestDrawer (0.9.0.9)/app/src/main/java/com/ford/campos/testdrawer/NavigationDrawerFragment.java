@@ -30,7 +30,10 @@ import java.util.ArrayList;
  * See the <a href="https://developer.android.com/design/patterns/navigation-drawer.html#Interaction">
  * design guidelines</a> for a complete explanation of the behaviors implemented here.
  *
- * Round 1 refactoring: 2/8/18
+ * Round 1 refactoring: 2/18/18
+ *
+ * Note: this class is a mess and will need to be broken up; just need to figure out how to do
+ * that...
  *
  */
 public class NavigationDrawerFragment extends Fragment {
@@ -39,16 +42,18 @@ public class NavigationDrawerFragment extends Fragment {
      * Remember the position of the selected item.
      */
     private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
+
     /**
      * Per the design guidelines, you should show the drawer on launch until the user manually
      * expands it. This shared preference tracks this.
      */
     private static final String PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
     private static final int LIKED_POSITION = 2;
-    private RecyclerView mRecyclerView;                                                             // Declaring RecyclerView
-    private RecyclerView.LayoutManager mLayoutManager;                                              // Declaring Layout Manager as a linear layout manager
-    private DrawerLayout Drawer;                                                                    // Declaring DrawerLayout
-    private ActionBarDrawerToggle mDrawerToggle;                                                    // Declaring Action Bar Drawer Toggle
+
+    private RecyclerView mRecyclerView;
+    private RecyclerView.LayoutManager mLayoutManager;
+    private DrawerLayout Drawer;
+    private ActionBarDrawerToggle mDrawerToggle;
     private String TAG = "NavDrawer";
 
     /**
@@ -81,6 +86,7 @@ public class NavigationDrawerFragment extends Fragment {
 
         // Select either the default item (0) or the last selected item.
         selectItem(mCurrentSelectedPosition, "onCreate");
+
     }
 
     /**
@@ -97,6 +103,33 @@ public class NavigationDrawerFragment extends Fragment {
             return;
         mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
         mFromSavedInstanceState = true;
+    }
+
+    private void selectItem(int position, String from) {
+        mCurrentSelectedPosition = position;
+        setToolbarTitle();
+        closeDrawer();
+        startNewGenreFragment(position);
+    }
+
+    private void setToolbarTitle() {
+        if (mDrawerRecyclerView != null)
+            ((MainActivity) getActivity()).setToolbarTitle(mCurrentSelectedPosition);
+    }
+
+    public void openDrawer() {
+        if (Drawer != null)
+            Drawer.openDrawer(mFragmentContainerView);
+    }
+
+    public void closeDrawer() {
+        if (Drawer != null)
+            Drawer.closeDrawer(mFragmentContainerView);
+    }
+
+    private void startNewGenreFragment(int position) {
+        if (mCallbacks != null)
+            mCallbacks.onNavigationDrawerItemSelected(position);
     }
 
     @Override
@@ -137,112 +170,14 @@ public class NavigationDrawerFragment extends Fragment {
      * Todo: Panic... but also refactor this after I've talked to the wicked witch of the west.
      *
      */
-    public void setUp(int fragmentId, DrawerLayout drawerLayout, final Toolbar toolbar) {
+    public void setup(int fragmentId, DrawerLayout drawerLayout, final Toolbar toolbar) {
 
         mFragmentContainerView = getActivity().findViewById(fragmentId);
-
         Drawer = drawerLayout;
 
-        // Assigning the RecyclerView Object to the xml View
-        mRecyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerview_navigation_drawer);
-        // Letting the system know that the list objects are of fixed size
-        mRecyclerView.setHasFixedSize(true);
-
-        ArrayList<Information> sectionInformation =
-                NavigationDrawerSections.getSectionInformation(getActivity());
-        adapter = new RecyclerViewArrayAdapter(getActivity(), sectionInformation);
-
-        // Setting the adapter to RecyclerView
-        mRecyclerView.setAdapter(adapter);
-
-        final GestureDetector mGestureDetector = new GestureDetector(getActivity(),
-                new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onSingleTapUp(MotionEvent e) {
-                return true;
-            }
-        });
-
-        mRecyclerView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
-            @Override
-            public boolean onInterceptTouchEvent(RecyclerView recyclerView, MotionEvent motionEvent) {
-                View child = recyclerView.findChildViewUnder(motionEvent.getX(), motionEvent.getY());
-
-                if (child != null && mGestureDetector.onTouchEvent(motionEvent)) {
-                    /**
-                     * Also Important:      recyclerView.getChildPosition(child) is 0 based
-                     */
-                    mCurrentSelectedPosition = recyclerView.getChildPosition(child);
-
-                    setItemChecked(mCurrentSelectedPosition, true);
-                    Drawer.closeDrawers();
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            @Override
-            public void onTouchEvent(RecyclerView recyclerView, MotionEvent motionEvent) { }
-        });
-
-
-        // Creating a layout Manager
-        mLayoutManager = new LinearLayoutManager(getActivity());
-        // Setting the layout Manager
-        mRecyclerView.setLayoutManager(mLayoutManager);
-
-        mDrawerToggle = new ActionBarDrawerToggle(
-                getActivity(),
-                Drawer,
-                toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close
-        ) {
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-
-                if (!isAdded()) {
-                    return;
-                }
-
-                getActivity().supportInvalidateOptionsMenu(); // calls onPrepareOptionsMenu()
-                super.onDrawerClosed(drawerView);
-            }
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-
-                if (!isAdded())
-                    return;
-
-                if (!mUserLearnedDrawer) {
-                    // The user manually opened the drawer; store this flag to prevent auto-showing
-                    // the navigation drawer automatically in the future.
-                    mUserLearnedDrawer = true;
-                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
-                    sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).apply();
-                }
-
-                getActivity().supportInvalidateOptionsMenu(); // calls onPrepareOptionsMenu()
-                super.onDrawerSlide(drawerView, 0); //Keeps the hamburger icon when the drawer is opened
-            }
-
-            @Override
-            public void onDrawerSlide(View drawerView, float slideOffset) {
-
-                Log.d(TAG, "slideOffset: " + slideOffset);
-
-                if (slideOffset > .5) {
-                    onDrawerOpened(drawerView);
-                } else {
-                    onDrawerClosed(drawerView);
-                }
-            }
-
-        }; // Drawer Toggle Object Made
+        setupRecyclerView();
+        setupLayoutManager();
+        setupDrawerToggle(toolbar);
 
         // If the user hasn't 'learned' about the drawer, open it to introduce them to the drawer,
         // per the navigation drawer design guidelines.
@@ -260,36 +195,105 @@ public class NavigationDrawerFragment extends Fragment {
 
         // Drawer Listener set to the Drawer toggle
         Drawer.setDrawerListener(mDrawerToggle);
-    }
-
-    private void selectItem(int position, String from) {
-
-        mCurrentSelectedPosition = position;
-
-        setToolbarTitle();
-        closeDrawer();
-        startNewGenreFragment(position);
 
     }
 
-    private void setToolbarTitle() {
-        if (mDrawerRecyclerView != null)
-            ((MainActivity) getActivity()).setToolbarTitle(mCurrentSelectedPosition);
+    private void setupRecyclerView() {
+
+        mRecyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerview_navigation_drawer);
+        mRecyclerView.setHasFixedSize(true);
+
+        ArrayList<Information> sectionInformation =
+                NavigationDrawerSections.getSectionInformation(getActivity());
+        adapter = new RecyclerViewArrayAdapter(getActivity(), sectionInformation);
+
+        mRecyclerView.setAdapter(adapter);
+
+        setupRecyclerViewFunctionality();
     }
 
-    public void openDrawer() {
-        if (Drawer != null)
-            Drawer.openDrawer(mFragmentContainerView);
+    private void setupRecyclerViewFunctionality() {
+
+        final GestureDetector mGestureDetector = new GestureDetector(getActivity(),
+                new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return true;
+            }
+        });
+
+        mRecyclerView.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+            @Override
+            public boolean onInterceptTouchEvent(RecyclerView recyclerView, MotionEvent motionEvent) {
+                View child = recyclerView.findChildViewUnder(motionEvent.getX(), motionEvent.getY());
+
+                if (child != null && mGestureDetector.onTouchEvent(motionEvent)) {
+
+                    //note: recyclerView.getChildPosition(child) is 0 based
+                    mCurrentSelectedPosition = recyclerView.getChildPosition(child);
+
+                    setItemChecked(mCurrentSelectedPosition, true);
+                    Drawer.closeDrawers();
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void onTouchEvent(RecyclerView recyclerView, MotionEvent motionEvent) { }
+
+        });
+
     }
 
-    public void closeDrawer() {
-        if (Drawer != null)
-            Drawer.closeDrawer(mFragmentContainerView);
+    private void setupLayoutManager() {
+        mLayoutManager = new LinearLayoutManager(getActivity());
+        mRecyclerView.setLayoutManager(mLayoutManager);
     }
 
-    private void startNewGenreFragment(int position) {
-        if (mCallbacks != null)
-            mCallbacks.onNavigationDrawerItemSelected(position);
+    private void setupDrawerToggle(final Toolbar toolbar) {
+        mDrawerToggle = new ActionBarDrawerToggle(getActivity(), Drawer, toolbar,
+                R.string .navigation_drawer_open, R.string.navigation_drawer_close) {
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                if (!isAdded())
+                    return;
+                getActivity().supportInvalidateOptionsMenu();
+                super.onDrawerClosed(drawerView);
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+
+                if (!isAdded())
+                    return;
+
+                if (!mUserLearnedDrawer) {
+                    // The user manually opened the drawer; store this flag to prevent auto-showing
+                    // the navigation drawer automatically in the future.
+                    mUserLearnedDrawer = true;
+                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                    sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).apply();
+                }
+
+                getActivity().supportInvalidateOptionsMenu();
+
+                //Keeps the hamburger icon when the drawer is opened
+                super.onDrawerSlide(drawerView, 0);
+            }
+
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {
+                if (slideOffset > .5)
+                    onDrawerOpened(drawerView);
+                else
+                    onDrawerClosed(drawerView);
+            }
+
+        };
     }
 
     public void setItemChecked(int position, boolean callNavDrawerItemSelected) {
@@ -381,4 +385,5 @@ public class NavigationDrawerFragment extends Fragment {
         void onNavigationDrawerItemSelected(int position);
 
     }
+
 }
