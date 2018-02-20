@@ -88,7 +88,6 @@ public class RecyclerViewArrayAdapter extends RecyclerView.Adapter<RecyclerViewA
 
         data.get(position).setActive(true);
         notifyItemChanged(position);
-        //notifyDataSetChanged();
 
         oldPosition = position;
 
@@ -98,21 +97,17 @@ public class RecyclerViewArrayAdapter extends RecyclerView.Adapter<RecyclerViewA
         Log.d(TAG, "setItemToInactive, pos: " + position);
         data.get(position).setActive(false);
         notifyItemChanged(position);
-        //notifyDataSetChanged();
     }
 
-    class MyViewHolder extends RecyclerView.ViewHolder {
+    protected class MyViewHolder extends RecyclerView.ViewHolder {
 
         private TextView textView;
         private ImageView imageView;
 
         public MyViewHolder(View itemView) {
             super(itemView);
-
             textView = (TextView) itemView.findViewById(R.id.custom_row_text_view);
             imageView = (ImageView) itemView.findViewById(R.id.custom_row_image_view);
-
-
         }
 
     }
